@@ -1,0 +1,113 @@
+@()
+@layouts.html.default("Scalatra: a tiny, Sinatra-like web framework for Scala", "Optical sushi"){
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+  <h3>頑張った分だけお寿司をもらおう</h3>
+  <div class="container-fluid"  id="app">
+    <div>
+      <input v-model="user" placeholder="なまえ">
+      <button v-on:click="getSushi(user)" class="btn btn-primary">おすしを見る</button>
+    </div>
+
+    <div>
+      <input v-model="to_user" placeholder="なまえ">
+      <input v-model="neta" placeholder="おすし">
+      <button v-on:click="sendSushi(to_user, neta)" class="btn btn-primary">おすしを贈る</button>
+    </div>
+
+    <div>
+      <h4>{{ message }}</h4>
+      <ul>
+        <li class="sushi" v-for="s in sushi">
+          <img v-bind:src="s" alt="" width="100">
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <style>
+    .sushi {
+      list-style:none;
+      display: inline-block;
+    }
+  </style>
+
+  <script>
+    var app = new Vue({
+      el: '#app',
+      data: {
+        user: '',
+        to_user: '',
+        message: '',
+        neta: '',
+        sushi: []
+      },
+      methods: {
+        testSushi: function() {
+          var url = `http://localhost:8080/sample`;
+          var result = callApi("GET", url); // api call
+          console.log(result);
+          this.message = result;
+        },
+        sendSushi: function(user, neta) {
+          app.sushi = [];
+          var url = `http://localhost:8080/${user}/${neta}`;
+          console.log(url);
+          var result = callApi("POST", url); // api call
+          var json = JSON.parse(result);
+          app.sushi.push(convertSushi(json.sushi));
+          this.message = json.name + "さんに" + json.sushi.name + "を" + json.sushi.num + "個贈りました";
+        },
+        getSushi: function(user) {
+          app.sushi = [];
+          var url = `http://localhost:8080/${user}/osushi/all`;
+          var result = callApi("GET", url); // api call
+          var json = JSON.parse(result);
+          json.sushi.map(v => app.sushi.push(convertSushi(v)));
+          this.message = json.name + "さんのおすし";
+        }
+      }
+    })
+
+    // apiを呼ぶ共通メソッド
+    function callApi(method, url) {
+      var data = null;
+      var req = new XMLHttpRequest();
+      console.log(url);
+      req.open(method, url, false);
+      req.send(null);
+      console.log(req);
+      if(req.readyState == 4 && req.status == 200) {
+          data = req.responseText;
+          console.log('api call successed.');
+      };
+      if (data) {
+        return data;
+        //return JSON.parse(data)
+      }
+      return;
+    }
+
+    // おすし変換メソッド
+    function convertSushi(json) {
+      var uri = "";
+      console.log(json);
+      if (json.name == "toro") {
+        uri = "https://2.bp.blogspot.com/-h1_jBlYNEVE/USyJ2MA1-3I/AAAAAAAAOb8/eWYDN_SJVbk/s1600/sushi_chutoro.png";
+        console.log(uri);
+      }
+      if (json.name == "ikura") {
+        uri = "https://3.bp.blogspot.com/-XHGwGMThERM/USyJ3K9TrII/AAAAAAAAOcQ/AfSbYI8B9Gs/s400/sushi_ikura.png";
+        console.log(uri);
+      }
+      if (json.name == "tamago") {
+        uri = "https://2.bp.blogspot.com/-5lo4Y9aetEU/USyJ5zAfMBI/AAAAAAAAOdM/WS6lp0KbWwE/s400/sushi_tamago.png";
+        console.log(uri);
+      }
+      return uri;
+    }
+  </script>
+}
